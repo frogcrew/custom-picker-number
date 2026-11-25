@@ -7,23 +7,23 @@ import {
 } from '@mui/x-data-grid-premium';
 import { createComboNumberColumn, useComboNumberGridHandlers, type ComboValue } from './comboNumberColumn';
 
-type Row = { id: number; name: string; aircraft_quantity: number | null; flight_hours: ComboValue };
+type Row = { id: number; name: string; quantity: number | null; hours: ComboValue };
 
 // Placeholder options: swap for the real list.
-const FLIGHT_HOURS_OPTIONS = ['N/A', 'TBD', 'Unlimited'] as const;
+const HOURS_OPTIONS = ['N/A', 'TBD', 'Unlimited'] as const;
 
 const initialRows: Row[] = [
-  { id: 1, name: 'Campaign A', aircraft_quantity: 3, flight_hours: 120 },
-  { id: 2, name: 'Campaign B', aircraft_quantity: 1, flight_hours: 'TBD' },
-  { id: 3, name: 'Campaign C', aircraft_quantity: null, flight_hours: null },
+  { id: 1, name: 'Item A', quantity: 3, hours: 120 },
+  { id: 2, name: 'Item B', quantity: 1, hours: 'TBD' },
+  { id: 3, name: 'Item C', quantity: null, hours: null },
 ];
 
 const columns: GridColDef<Row>[] = [
   { field: 'name', headerName: 'Name', width: 160 },
   {
     // Existing stock number column, for side-by-side comparison
-    field: 'aircraft_quantity',
-    headerName: 'Aircraft qty',
+    field: 'quantity',
+    headerName: 'Quantity',
     width: 140,
     editable: true,
     type: 'number',
@@ -31,8 +31,8 @@ const columns: GridColDef<Row>[] = [
     renderEditCell: (params) => <GridEditInputCell {...params} inputProps={{ min: 0 }} />,
   },
   createComboNumberColumn<Row>(
-    { field: 'flight_hours', headerName: 'Flight hours', width: 160 },
-    { options: FLIGHT_HOURS_OPTIONS /* , allowDecimals: true */ },
+    { field: 'hours', headerName: 'Hours', width: 160 },
+    { options: HOURS_OPTIONS /* , allowDecimals: true */ },
   ),
 ];
 

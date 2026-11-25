@@ -14,8 +14,8 @@ const { onCellKeyDown } = useComboNumberGridHandlers(apiRef);
 
 const columns = [
   createComboNumberColumn<Row>(
-    { field: 'flight_hours', headerName: mapCampaignheader('flight_hours'), width: 160,
-      renderHeader: (params) => <ColumnHeaderExtras label={params.colDef.headerName} /> },
+    { field: 'hours', headerName: 'Hours', width: 160,
+      renderHeader: (params) => <MyHeader label={params.colDef.headerName} /> },
     { options: ['N/A', 'TBD', 'Unlimited'] /* , allowDecimals: true */ },
   ),
 ];

@@ -9,7 +9,7 @@ class RO { observe() {} unobserve() {} disconnect() {} }
 
 const cfg = { options: ['N/A', 'TBD', 'Unlimited'] };
 
-function cell(rowId: number, field = 'flight_hours') {
+function cell(rowId: number, field = 'hours') {
   return document.querySelector(`[data-id="${rowId}"] [data-field="${field}"]`) as HTMLElement;
 }
 
@@ -61,7 +61,7 @@ describe('combo cell interactions', () => {
     const input = within(cell(1)).getByRole('combobox') as HTMLInputElement;
     expect(input.value).toBe('7');
     await user.keyboard('5{Enter}');
-    await waitFor(() => expect(commits.at(-1)?.flight_hours).toBe(75));
+    await waitFor(() => expect(commits.at(-1)?.hours).toBe(75));
   });
 
   it('typing a letter in view mode is ignored', async () => {
@@ -86,7 +86,7 @@ describe('combo cell interactions', () => {
     await user.click(within(cell(1)).getByLabelText('Open options'));
     const listbox = await screen.findByRole('listbox');
     await user.click(within(listbox).getByText('Unlimited'));
-    await waitFor(() => expect(commits.at(-1)?.flight_hours).toBe('Unlimited'));
+    await waitFor(() => expect(commits.at(-1)?.hours).toBe('Unlimited'));
     expect(within(cell(1)).queryByTestId('combo-edit')).toBeNull();
     expect(cell(1).textContent).toContain('Unlimited');
   });
@@ -97,7 +97,7 @@ describe('combo cell interactions', () => {
     await user.keyboard('{ArrowDown}');
     expect(screen.getByRole('listbox')).toBeTruthy();
     await user.keyboard('{ArrowDown}{Enter}');
-    await waitFor(() => expect(commits.at(-1)?.flight_hours).toBe('TBD'));
+    await waitFor(() => expect(commits.at(-1)?.hours).toBe('TBD'));
   });
 
   it('Alt+ArrowDown on a focused view cell opens the list', async () => {
@@ -114,28 +114,28 @@ describe('combo cell interactions', () => {
     await user.keyboard('42');
     expect(screen.getAllByRole('option')).toHaveLength(3); // not filtered
     await user.keyboard('{Enter}');
-    await waitFor(() => expect(commits.at(-1)?.flight_hours).toBe(42));
+    await waitFor(() => expect(commits.at(-1)?.hours).toBe(42));
   });
 
   it('digit replaces a selected string', async () => {
     const { user, commits } = setup();
     await user.dblClick(cell(2));
     await user.keyboard('8{Enter}');
-    await waitFor(() => expect(commits.at(-1)?.flight_hours).toBe(8));
+    await waitFor(() => expect(commits.at(-1)?.hours).toBe(8));
   });
 
   it('Backspace clears a selected string', async () => {
     const { user, commits } = setup();
     await user.dblClick(cell(2));
     await user.keyboard('{Backspace}{Enter}');
-    await waitFor(() => expect(commits.at(-1)?.flight_hours).toBe(null));
+    await waitFor(() => expect(commits.at(-1)?.hours).toBe(null));
   });
 
   it('Delete in view mode clears the cell', async () => {
     const { user, commits } = setup();
     await user.click(cell(1));
     await user.keyboard('{Delete}{Enter}');
-    await waitFor(() => expect(commits.at(-1)?.flight_hours).toBe(null));
+    await waitFor(() => expect(commits.at(-1)?.hours).toBe(null));
   });
 
   it('Escape reverts and exits, even with the list open', async () => {
@@ -153,13 +153,13 @@ describe('combo cell interactions', () => {
     const { user, commits } = setup();
     await user.dblClick(cell(3));
     await user.keyboard('5{Tab}');
-    await waitFor(() => expect(commits.at(-1)?.flight_hours).toBe(5));
+    await waitFor(() => expect(commits.at(-1)?.hours).toBe(5));
   });
 
   it('stock number column still behaves the same', async () => {
     const { user, commits } = setup();
-    await user.click(cell(1, 'aircraft_quantity'));
+    await user.click(cell(1, 'quantity'));
     await user.keyboard('9{Enter}');
-    await waitFor(() => expect(commits.at(-1)?.aircraft_quantity).toBe(9));
+    await waitFor(() => expect(commits.at(-1)?.quantity).toBe(9));
   });
 });
