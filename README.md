@@ -23,7 +23,8 @@ const columns = [
 <DataGridPremium apiRef={apiRef} columns={columns} onCellKeyDown={onCellKeyDown} ... />
 ```
 - `onCellKeyDown` is required for "letters are ignored" and Alt+ArrowDown. If the grid already
-  has an `onCellKeyDown`, call ours first inside it.
+  has an `onCellKeyDown`, put this line at the top of it instead of using the hook:
+  `if (handleComboCellKeyDown(apiRef, params, event)) return;`
 - Anything you pass in the first argument (header, width, renderHeader, valueSetter, etc.)
   overrides the defaults. `renderCell` / `renderEditCell` are owned by the factory.
 - Commits go through `processRowUpdate` like the stock number columns.
@@ -38,7 +39,7 @@ const columns = [
 | 4 | Click cell, type `x` | Nothing happens |
 | 5 | Click caret (view mode) | Edit mode + list open in one click |
 | 6 | Click an option | Saves, exits edit mode, string shows left-aligned |
-| 7 | List open, type `42`, Enter | Saves 42 (list not filtered), right-aligned |
+| 7 | List open, type `42`, Enter | Saves 42 (list not filtered), left-aligned |
 | 8 | Edit mode, ArrowDown | List opens, first option highlighted |
 | 9 | Arrows + Enter | Highlighted option saved |
 | 10 | Focused view cell, Alt+ArrowDown | Edit mode + list open |
@@ -56,5 +57,7 @@ const columns = [
   grid scrolls while it's open it follows the anchor; verify inside your page layout.
 - **Paste (#18):** the column's `valueParser` accepts numbers or exact option strings. If your
   custom paste writes rows directly instead of going through the grid, it skips the parser.
+- **Alignment:** numbers and strings are both left-aligned, in view and edit mode. Text stays in the same
+  position when edit mode starts.
 - **Zero:** allowed (matches `min: 0` on your number columns). Negative numbers can't be typed.
 - **Decimals:** set `allowDecimals: true` in the config.

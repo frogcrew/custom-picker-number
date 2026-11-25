@@ -5,7 +5,7 @@
  * list of strings picked from a dropdown.
  *
  * Behavior
- *  - View mode: value + an always-visible caret. Numbers right-aligned, strings left-aligned.
+ *  - View mode: value + an always-visible caret. Numbers and strings are left-aligned.
  *  - Single click: focuses the cell only. Double click: edit mode.
  *  - Typing a digit (or "." when allowDecimals) in view mode: edit mode, value replaced.
  *    Letters and other characters are ignored.
@@ -24,7 +24,9 @@
  *   const apiRef = useGridApiRef();
  *   const { onCellKeyDown } = useComboNumberGridHandlers(apiRef);
  *   <DataGridPremium apiRef={apiRef} onCellKeyDown={onCellKeyDown} ... />
- * If the grid already has an onCellKeyDown, call ours first inside it.
+ * If the grid already has an onCellKeyDown, call handleComboCellKeyDown at the top of it
+ * instead, and return when it returns true:
+ *   if (handleComboCellKeyDown(apiRef, params, event)) return;
  */
 import * as React from 'react';
 import Box from '@mui/material/Box';
@@ -140,24 +142,40 @@ function startEditWithListOpen(api: ApiLike, id: GridRowId, field: string) {
 // Grid-level handler (needed for "ignore letters" and Alt+ArrowDown)
 // ---------------------------------------------------------------------------
 
+/**
+ * Plain function version, for calling inside an existing onCellKeyDown.
+ * Returns true when it handled the key; the caller should then stop.
+ */
+export function handleComboCellKeyDown(
+  apiRef: React.RefObject<GridApiPremium | null>,
+  params: GridCellParams,
+  event: React.KeyboardEvent,
+): boolean {
+  const config = getConfig(params.colDef);
+  if (!config || params.cellMode !== GridCellModes.View || !params.isEditable) return false;
+  const muiEvent = event as MuiEvent<React.KeyboardEvent>;
+
+  // Alt+ArrowDown: open the list (like a native select)
+  if (event.altKey && event.key === 'ArrowDown') {
+    event.preventDefault();
+    muiEvent.defaultMuiPrevented = true;
+    if (apiRef.current) startEditWithListOpen(apiRef.current, params.id, params.field);
+    return true;
+  }
+
+  // Printable keys that are not digits (or "." with decimals): do nothing.
+  if (isPrintableKey(event) && !isAllowedStartKey(event.key, config)) {
+    muiEvent.defaultMuiPrevented = true;
+    return true;
+  }
+  return false;
+}
+
+/** Hook version, for grids with no onCellKeyDown of their own. */
 export function useComboNumberGridHandlers(apiRef: React.RefObject<GridApiPremium | null>) {
   const onCellKeyDown = React.useCallback(
     (params: GridCellParams, event: MuiEvent<React.KeyboardEvent<HTMLElement>>) => {
-      const config = getConfig(params.colDef);
-      if (!config || params.cellMode !== GridCellModes.View || !params.isEditable) return;
-
-      // Alt+ArrowDown: open the list (like a native select)
-      if (event.altKey && event.key === 'ArrowDown') {
-        event.preventDefault();
-        event.defaultMuiPrevented = true;
-        if (apiRef.current) startEditWithListOpen(apiRef.current, params.id, params.field);
-        return;
-      }
-
-      // Printable keys that are not digits (or "." with decimals): do nothing.
-      if (isPrintableKey(event) && !isAllowedStartKey(event.key, config)) {
-        event.defaultMuiPrevented = true;
-      }
+      handleComboCellKeyDown(apiRef, params, event);
     },
     [apiRef],
   );
@@ -171,7 +189,6 @@ export function useComboNumberGridHandlers(apiRef: React.RefObject<GridApiPremiu
 function ComboViewCell(props: GridRenderCellParams<GridValidRowModel, ComboValue>) {
   const { id, field, value, formattedValue, isEditable } = props;
   const apiRef = useGridApiContext();
-  const isNumber = typeof value === 'number';
 
   const handleCaretClick = (event: React.MouseEvent) => {
     event.stopPropagation(); // no cellClick (row selection etc.)
@@ -192,7 +209,7 @@ function ComboViewCell(props: GridRenderCellParams<GridValidRowModel, ComboValue
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          textAlign: isNumber ? 'right' : 'left',
+          textAlign: 'left',
         }}
       >
         {(formattedValue as React.ReactNode) ?? toInputString(value)}
@@ -330,7 +347,6 @@ function ComboEditCell(props: GridRenderEditCellParams<GridValidRowModel, ComboV
     inputRef.current?.focus();
   };
 
-  const showsOption = isOption(config, inputValue);
   const activeId = open && highlighted >= 0 ? `${listId}-opt-${highlighted}` : undefined;
 
   return (
@@ -356,7 +372,8 @@ function ComboEditCell(props: GridRenderEditCellParams<GridValidRowModel, ComboV
         sx={{
           fontSize: 'inherit',
           height: '100%',
-          '& input': { p: '0 4px 0 16px', textAlign: showsOption ? 'left' : 'right' },
+          // 9px + the editing cell's 1px padding = the view cell's 10px, so text doesn't shift
+          '& input': { p: '0 4px 0 9px', textAlign: 'left' },
         }}
       />
       <IconButton

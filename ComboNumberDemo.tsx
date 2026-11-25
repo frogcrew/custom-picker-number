@@ -3,9 +3,10 @@ import {
   DataGridPremium,
   GridEditInputCell,
   useGridApiRef,
+  type GridCellParams,
   type GridColDef,
 } from '@mui/x-data-grid-premium';
-import { createComboNumberColumn, useComboNumberGridHandlers, type ComboValue } from './comboNumberColumn';
+import { createComboNumberColumn, handleComboCellKeyDown, type ComboValue } from './comboNumberColumn';
 
 type Row = { id: number; name: string; quantity: number | null; hours: ComboValue };
 
@@ -42,7 +43,14 @@ export interface ComboNumberDemoProps {
 
 export default function ComboNumberDemo({ onRowCommit }: ComboNumberDemoProps) {
   const apiRef = useGridApiRef();
-  const { onCellKeyDown } = useComboNumberGridHandlers(apiRef);
+  // Same shape as an existing grid-level handler: the combo call goes first.
+  const onCellKeyDown = React.useMemo(
+    () => (params: GridCellParams, event: React.KeyboardEvent<HTMLElement>) => {
+      if (handleComboCellKeyDown(apiRef, params, event)) return;
+      // ...existing onCellKeyDown logic would continue here
+    },
+    [apiRef],
+  );
   const [rows] = React.useState(initialRows);
 
   return (
