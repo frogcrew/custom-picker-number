@@ -13,10 +13,10 @@ function cell(rowId: number, field = 'hours') {
   return document.querySelector(`[data-id="${rowId}"] [data-field="${field}"]`) as HTMLElement;
 }
 
-function setup() {
+function setup(props: Partial<React.ComponentProps<typeof ComboNumberDemo>> = {}) {
   const commits: any[] = [];
   const user = userEvent.setup();
-  render(<ComboNumberDemo onRowCommit={(r) => commits.push(r)} />);
+  render(<ComboNumberDemo onRowCommit={(r) => commits.push(r)} {...props} />);
   return { user, commits };
 }
 
@@ -154,6 +154,32 @@ describe('combo cell interactions', () => {
     await user.dblClick(cell(3));
     await user.keyboard('5{Tab}');
     await waitFor(() => expect(commits.at(-1)?.hours).toBe(5));
+  });
+
+  it('edit-mode caret flips between ExpandMore (closed) and ExpandLess (open)', async () => {
+    const { user } = setup();
+    expect(within(cell(1)).getByTestId('ExpandMoreIcon')).toBeTruthy();
+    await user.click(within(cell(1)).getByLabelText('Open options'));
+    await screen.findByRole('listbox');
+    expect(within(cell(1)).getByTestId('ExpandLessIcon')).toBeTruthy();
+    await user.click(within(cell(1)).getByLabelText('Close options'));
+    await waitFor(() => expect(screen.queryByRole('listbox')).toBeNull());
+    expect(within(cell(1)).getByTestId('ExpandMoreIcon')).toBeTruthy();
+    await user.keyboard('{ArrowDown}');
+    expect(within(cell(1)).getByTestId('ExpandLessIcon')).toBeTruthy();
+  });
+
+  it('custom icons are used for view, edit closed and edit open', async () => {
+    const make = (name: string) => () => <svg data-testid={name} />;
+    const icons = { view: make('view-icon'), editClosed: make('closed-icon'), editOpen: make('open-icon') };
+    const { user } = setup({ hoursIcons: icons });
+    expect(within(cell(1)).getByTestId('view-icon')).toBeTruthy();
+    await user.dblClick(cell(1));
+    expect(within(cell(1)).getByTestId('closed-icon')).toBeTruthy();
+    await user.keyboard('{ArrowDown}');
+    expect(within(cell(1)).getByTestId('open-icon')).toBeTruthy();
+    await user.keyboard('{Alt>}{ArrowUp}{/Alt}');
+    expect(within(cell(1)).getByTestId('closed-icon')).toBeTruthy();
   });
 
   it('stock number column still behaves the same', async () => {

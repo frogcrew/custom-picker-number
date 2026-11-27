@@ -5,7 +5,7 @@ Built and tested against `@mui/x-data-grid-premium` 8.29, `@mui/material` 7, Rea
 ## Files
 - `comboNumberColumn.tsx`: the column factory, view cell, edit cell and grid handler
 - `ComboNumberDemo.tsx`: example grid with your stock number column beside the combo column
-- `comboNumberColumn.test.tsx`: 17 interaction tests (Vitest + Testing Library)
+- `comboNumberColumn.test.tsx`: 19 interaction tests (Vitest + Testing Library)
 
 ## Integration
 ```tsx
@@ -29,6 +29,26 @@ const columns = [
   overrides the defaults. `renderCell` / `renderEditCell` are owned by the factory.
 - Commits go through `processRowUpdate` like the stock number columns.
 - Defaults: sorting, filtering, aggregation and grouping off.
+
+### Icons
+The caret icon is configurable per column. Defaults are ExpandMore (closed) and ExpandLess
+(open); any icon left out keeps its default.
+```tsx
+import EditIcon from '@mui/icons-material/Edit';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+
+createComboNumberColumn<Row>({ field: 'hours' }, {
+  options: ['N/A', 'TBD', 'Unlimited'],
+  icons: {
+    view: EditIcon,             // not editing (default: ExpandMore)
+    editClosed: ExpandMoreIcon, // editing, list closed (default: ExpandMore)
+    editOpen: ExpandLessIcon,   // editing, list open (default: ExpandLess)
+  },
+});
+```
+In edit mode the icon switches between `editClosed` and `editOpen` whenever the list opens or
+closes (caret click, ArrowDown, Alt+ArrowUp, picking an option).
 
 ## Manual test checklist (real browser)
 | # | Action | Expected |

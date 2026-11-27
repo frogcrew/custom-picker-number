@@ -6,7 +6,12 @@ import {
   type GridCellParams,
   type GridColDef,
 } from '@mui/x-data-grid-premium';
-import { createComboNumberColumn, handleComboCellKeyDown, type ComboValue } from './comboNumberColumn';
+import {
+  createComboNumberColumn,
+  handleComboCellKeyDown,
+  type ComboNumberIcons,
+  type ComboValue,
+} from './comboNumberColumn';
 
 type Row = { id: number; name: string; quantity: number | null; hours: ComboValue };
 
@@ -19,7 +24,7 @@ const initialRows: Row[] = [
   { id: 3, name: 'Item C', quantity: null, hours: null },
 ];
 
-const columns: GridColDef<Row>[] = [
+const makeColumns = (icons?: ComboNumberIcons): GridColDef<Row>[] => [
   { field: 'name', headerName: 'Name', width: 160 },
   {
     // Existing stock number column, for side-by-side comparison
@@ -33,16 +38,24 @@ const columns: GridColDef<Row>[] = [
   },
   createComboNumberColumn<Row>(
     { field: 'hours', headerName: 'Hours', width: 160 },
-    { options: HOURS_OPTIONS /* , allowDecimals: true */ },
+    {
+      options: HOURS_OPTIONS,
+      // allowDecimals: true,
+      // icons: { view: EditIcon }, // defaults: ExpandMore (closed) / ExpandLess (open)
+      icons,
+    },
   ),
 ];
 
 export interface ComboNumberDemoProps {
   onRowCommit?: (row: Row) => void;
+  /** Custom caret icons for the Hours column. */
+  hoursIcons?: ComboNumberIcons;
 }
 
-export default function ComboNumberDemo({ onRowCommit }: ComboNumberDemoProps) {
+export default function ComboNumberDemo({ onRowCommit, hoursIcons }: ComboNumberDemoProps) {
   const apiRef = useGridApiRef();
+  const columns = React.useMemo(() => makeColumns(hoursIcons), [hoursIcons]);
   // Same shape as an existing grid-level handler: the combo call goes first.
   const onCellKeyDown = React.useMemo(
     () => (params: GridCellParams, event: React.KeyboardEvent<HTMLElement>) => {

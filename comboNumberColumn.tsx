@@ -10,6 +10,8 @@
  *  - Typing a digit (or "." when allowDecimals) in view mode: edit mode, value replaced.
  *    Letters and other characters are ignored.
  *  - Caret click (or Alt+ArrowDown on a focused cell): edit mode with the list open.
+ *  - Caret icons are configurable (config.icons): one for view mode, and in edit mode
+ *    one for list closed / one for list open (default: ExpandMore / ExpandLess).
  *  - In edit mode: typing edits the number only (list is not filtered).
  *    ArrowUp/ArrowDown move through options, Enter on a highlighted option or a
  *    mouse click on an option saves and exits. Enter with nothing highlighted
@@ -50,7 +52,9 @@ import {
   type MuiEvent,
 } from '@mui/x-data-grid-premium';
 
-const ArrowDropDownIcon = createSvgIcon(<path d="M7 10l5 5 5-5z" />, 'ArrowDropDown');
+// Same paths as @mui/icons-material ExpandMore / ExpandLess, without the extra dependency.
+const ExpandMoreIcon = createSvgIcon(<path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />, 'ExpandMore');
+const ExpandLessIcon = createSvgIcon(<path d="m12 8-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z" />, 'ExpandLess');
 
 // ---------------------------------------------------------------------------
 // Types and config
@@ -58,11 +62,25 @@ const ArrowDropDownIcon = createSvgIcon(<path d="M7 10l5 5 5-5z" />, 'ArrowDropD
 
 export type ComboValue = number | string | null;
 
+/** Any icon component that accepts fontSize, e.g. an @mui/icons-material icon. */
+export type ComboIcon = React.ElementType<{ fontSize?: 'inherit' | 'small' | 'medium' | 'large' }>;
+
+export interface ComboNumberIcons {
+  /** Icon shown in view mode (not editing). Default: ExpandMore. */
+  view?: ComboIcon;
+  /** Icon shown in edit mode while the list is closed. Default: ExpandMore. */
+  editClosed?: ComboIcon;
+  /** Icon shown in edit mode while the list is open. Default: ExpandLess. */
+  editOpen?: ComboIcon;
+}
+
 export interface ComboNumberConfig {
   /** Fixed dropdown options, same for every row. */
   options: readonly string[];
   /** Allow decimals in typed numbers. Off by default (positive integers only). */
   allowDecimals?: boolean;
+  /** Override the caret icons. Any icon left out keeps its default. */
+  icons?: ComboNumberIcons;
 }
 
 type ComboColDef<R extends GridValidRowModel> = GridColDef<R, ComboValue> & {
@@ -187,8 +205,9 @@ export function useComboNumberGridHandlers(apiRef: React.RefObject<GridApiPremiu
 // ---------------------------------------------------------------------------
 
 function ComboViewCell(props: GridRenderCellParams<GridValidRowModel, ComboValue>) {
-  const { id, field, value, formattedValue, isEditable } = props;
+  const { id, field, value, formattedValue, isEditable, colDef } = props;
   const apiRef = useGridApiContext();
+  const ViewIcon = getConfig(colDef)?.icons?.view ?? ExpandMoreIcon;
 
   const handleCaretClick = (event: React.MouseEvent) => {
     event.stopPropagation(); // no cellClick (row selection etc.)
@@ -223,7 +242,7 @@ function ComboViewCell(props: GridRenderCellParams<GridValidRowModel, ComboValue
         onDoubleClick={(event) => event.stopPropagation()}
         sx={{ p: 0.25, flexShrink: 0 }}
       >
-        <ArrowDropDownIcon fontSize="small" />
+        <ViewIcon fontSize="small" />
       </IconButton>
     </Box>
   );
@@ -348,6 +367,9 @@ function ComboEditCell(props: GridRenderEditCellParams<GridValidRowModel, ComboV
   };
 
   const activeId = open && highlighted >= 0 ? `${listId}-opt-${highlighted}` : undefined;
+  const CaretIcon = open
+    ? (config.icons?.editOpen ?? ExpandLessIcon)
+    : (config.icons?.editClosed ?? ExpandMoreIcon);
 
   return (
     <Box
@@ -385,7 +407,7 @@ function ComboEditCell(props: GridRenderEditCellParams<GridValidRowModel, ComboV
         onDoubleClick={(event) => event.stopPropagation()}
         sx={{ p: 0.25, mr: 1, flexShrink: 0 }}
       >
-        <ArrowDropDownIcon fontSize="small" />
+        <CaretIcon fontSize="small" />
       </IconButton>
 
       <Popper
